@@ -19,22 +19,39 @@ Scope: Cluster-level (assignable per cluster)
 Permissions (JSON example):
 
 {
-  "roleName": "AKS Control Plane Admin",
-  "description": "Full cluster admin permissions including namespaces, RBAC, and cluster resources.",
+  "roleName": "AKS Control Plane Admin - Secure",
+  "description": "Full cluster admin with granular actions, no wildcards for cluster-wide operations.",
   "assignableScopes": ["/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerService/managedClusters/<cluster>"],
   "permissions": [
     {
       "actions": [
-        "Microsoft.ContainerService/managedClusters/*",
-        "Microsoft.Authorization/*/read",
-        "Microsoft.Resources/subscriptions/resourceGroups/read"
+        "Microsoft.ContainerService/managedClusters/read",
+        "Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action",
+        "Microsoft.ContainerService/managedClusters/accessProfiles/listCredential/action",
+        "Microsoft.ContainerService/managedClusters/runCommand/action"
+      ],
+      "dataActions": [
+        "Microsoft.ContainerService/managedClusters/namespaces/read",
+        "Microsoft.ContainerService/managedClusters/namespaces/write",
+        "Microsoft.ContainerService/managedClusters/namespaces/delete",
+        "Microsoft.ContainerService/managedClusters/apps/deployments/*",
+        "Microsoft.ContainerService/managedClusters/apps/statefulsets/*",
+        "Microsoft.ContainerService/managedClusters/apps/daemonsets/*",
+        "Microsoft.ContainerService/managedClusters/apps/replicasets/*",
+        "Microsoft.ContainerService/managedClusters/batch/jobs/*",
+        "Microsoft.ContainerService/managedClusters/batch/cronjobs/*",
+        "Microsoft.ContainerService/managedClusters/extensions/ingresses/*",
+        "Microsoft.ContainerService/managedClusters/services/*",
+        "Microsoft.ContainerService/managedClusters/configmaps/*",
+        "Microsoft.ContainerService/managedClusters/secrets/*",
+        "Microsoft.ContainerService/managedClusters/serviceaccounts/*"
       ],
       "notActions": [],
-      "dataActions": ["Microsoft.ContainerService/managedClusters/*"],
       "notDataActions": []
     }
   ]
 }
+
 
 
 Capabilities:
@@ -57,16 +74,28 @@ Scope: Namespace-level (assignable per namespace)
 Permissions (JSON example):
 
 {
-  "roleName": "AKS Data Plane Admin",
-  "description": "Manage all resources within assigned namespaces. Cannot manage cluster-level settings or namespaces.",
+  "roleName": "AKS Data Plane Admin - Secure",
+  "description": "Namespace-level workload admin. Cannot modify cluster-level resources or RBAC.",
   "assignableScopes": ["/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerService/managedClusters/<cluster>/managedNamespaces/<namespace>"],
   "permissions": [
     {
-      "actions": ["Microsoft.ContainerService/managedClusters/managedNamespaces/*"],
+      "actions": [],
+      "dataActions": [
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/apps/deployments/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/apps/statefulsets/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/apps/daemonsets/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/batch/jobs/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/batch/cronjobs/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/services/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/configmaps/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/secrets/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/serviceaccounts/*"
+      ],
       "notActions": [],
-      "dataActions": ["Microsoft.ContainerService/managedClusters/*"],
       "notDataActions": [
-        "Microsoft.ContainerService/managedClusters/namespaces/*"
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/namespaces/write",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/namespaces/delete",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/roleAssignments/*"
       ]
     }
   ]
@@ -90,22 +119,32 @@ This role provides read-only access to view AKS cluster and namespace resources 
 Scope: Cluster-level or Namespace-level (depending on assignment)
 
 Permissions (JSON example):
-
 {
-  "roleName": "AKS Reader Role",
-  "description": "Read-only access to view cluster and namespace resources.",
+  "roleName": "AKS Reader Role - Secure",
+  "description": "Read-only access to cluster and namespace resources. No secret or RBAC access.",
   "assignableScopes": ["/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerService/managedClusters/<cluster>"],
   "permissions": [
     {
-      "actions": ["Microsoft.Authorization/*/read", "Microsoft.Resources/subscriptions/resourceGroups/read"],
-      "notActions": [],
+      "actions": ["Microsoft.Resources/subscriptions/resourceGroups/read"],
       "dataActions": [
-        "Microsoft.ContainerService/managedClusters/*/read"
+        "Microsoft.ContainerService/managedClusters/namespaces/read",
+        "Microsoft.ContainerService/managedClusters/apps/deployments/read",
+        "Microsoft.ContainerService/managedClusters/apps/statefulsets/read",
+        "Microsoft.ContainerService/managedClusters/apps/daemonsets/read",
+        "Microsoft.ContainerService/managedClusters/batch/jobs/read",
+        "Microsoft.ContainerService/managedClusters/batch/cronjobs/read",
+        "Microsoft.ContainerService/managedClusters/services/read",
+        "Microsoft.ContainerService/managedClusters/configmaps/read"
       ],
-      "notDataActions": []
+      "notActions": [],
+      "notDataActions": [
+        "Microsoft.ContainerService/managedClusters/secrets/read",
+        "Microsoft.ContainerService/managedClusters/roleAssignments/*"
+      ]
     }
   ]
 }
+
 
 
 Capabilities:
