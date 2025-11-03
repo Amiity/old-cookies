@@ -97,3 +97,50 @@ Here’s the JSON:
   "NotDataActions": [],
   "AssignableScopes": ["/"]
 }
+
+
+AKS Platform Admin
+
+Description:
+This role provides full administrative access to AKS clusters and namespaces, combining cluster-level and namespace-level management capabilities. Users can:
+
+Read and list cluster credentials (admin, user, monitoring)
+
+Manage all cluster resources (Pods, Deployments, DaemonSets, StatefulSets, Services, ConfigMaps, Secrets, Jobs, CronJobs, Namespaces, Network Policies, etc.)
+
+Run commands against the cluster
+
+Read role assignments and resource groups
+
+Key Points:
+
+Grants both cluster-wide and namespace-wide management.
+
+Enables operational tasks like deploying workloads, modifying namespace resources, and accessing Secrets.
+
+Suitable for platform engineers or operators who manage AKS infrastructure.
+
+Custom Role 2: AKS Platform Reader
+
+Description:
+This role provides read-only access across AKS clusters and namespaces, combining the data-reading capabilities from multiple built-in AKS reader roles. Users can:
+
+Read cluster credentials (user, monitoring)
+
+View cluster and namespace resources (Pods, Deployments, DaemonSets, Services, ConfigMaps, Jobs, CronJobs, Network Policies, ResourceQuotas, etc.)
+
+Read role assignments and resource groups
+
+Key Points:
+
+No ability to modify any resources.
+
+Can be assigned at cluster scope for cross-namespace read access.
+
+Ideal for auditors, developers, or monitoring tools that need visibility without write permissions.
+
+In short:
+
+Admin role: Full control at cluster and namespace level.
+
+Reader role: Full visibility at cluster and namespace level, no write access.
