@@ -1,146 +1,126 @@
-Here’s a clean combined JSON:
+Azure Kubernetes Service (AKS) Custom Roles Documentation
+Overview
+
+In AKS, permissions can be segregated into Control Plane, Data Plane, and Reader roles to ensure secure and structured access management:
+
+AKS Control Plane Admin – Full cluster-level control including namespace creation and cluster-wide resource management.
+
+AKS Data Plane Admin – Namespace-level workload management; cannot create or manage cluster-wide resources.
+
+AKS Reader Role – Read-only access to view cluster and namespace resources; cannot modify or create resources.
+
+1. AKS Control Plane Admin
+
+Description:
+This role provides full administrative control over the AKS cluster, including namespace creation, RBAC management, and all cluster-level and workload resources.
+
+Scope: Cluster-level (assignable per cluster)
+
+Permissions (JSON example):
 
 {
-  "Name": "Custom AKS Admin Role",
-  "IsCustom": true,
-  "Description": "Custom role that combines AKS Cluster Admin, Contributor, Namespace Contributor, and RBAC Admin permissions to allow full management of AKS clusters and namespaces.",
-  "Actions": [
-    "Microsoft.Authorization/*/read",
-    "Microsoft.Resources/subscriptions/operationresults/read",
-    "Microsoft.Resources/subscriptions/read",
-    "Microsoft.Resources/subscriptions/resourceGroups/read",
-    "Microsoft.ContainerService/locations/*",
-    "Microsoft.ContainerService/managedClusters/*",
-    "Microsoft.ContainerService/managedclustersnapshots/*",
-    "Microsoft.ContainerService/snapshots/*",
-    "Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action",
-    "Microsoft.ContainerService/managedClusters/listClusterUserCredential/action",
-    "Microsoft.ContainerService/managedClusters/runcommand/action",
-    "Microsoft.ContainerService/managedClusters/accessProfiles/listCredential/action",
-    "Microsoft.ContainerService/managedClusters/managedNamespaces/*",
-    "Microsoft.Insights/alertRules/*",
-    "Microsoft.Resources/deployments/*"
-  ],
-  "NotActions": [],
-  "DataActions": [
-    "Microsoft.ContainerService/managedClusters/*"
-  ],
-  "NotDataActions": [
-    "Microsoft.ContainerService/managedClusters/resourcequotas/write",
-    "Microsoft.ContainerService/managedClusters/resourcequotas/delete",
-    "Microsoft.ContainerService/managedClusters/namespaces/write",
-    "Microsoft.ContainerService/managedClusters/namespaces/delete"
-  ],
-  "AssignableScopes": ["/"]
+  "roleName": "AKS Control Plane Admin",
+  "description": "Full cluster admin permissions including namespaces, RBAC, and cluster resources.",
+  "assignableScopes": ["/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerService/managedClusters/<cluster>"],
+  "permissions": [
+    {
+      "actions": [
+        "Microsoft.ContainerService/managedClusters/*",
+        "Microsoft.Authorization/*/read",
+        "Microsoft.Resources/subscriptions/resourceGroups/read"
+      ],
+      "notActions": [],
+      "dataActions": ["Microsoft.ContainerService/managedClusters/*"],
+      "notDataActions": []
+    }
+  ]
 }
 
 
-👉 Purpose:
-Give platform or DevOps teams full AKS management (cluster-level + namespace-level), including running commands, viewing credentials, scaling, and managing workloads.
+Capabilities:
 
-🧩 2️⃣ Custom AKS Reader Role
+Resource / Action	Allowed?	Notes
+Namespaces	✅ Create / Update / Delete	Cluster-level operation
+ClusterRoles / ClusterRoleBindings	✅ Manage	Full control over RBAC
+Deployments / Pods	✅ Full control	Across all namespaces
+Services / ConfigMaps / Secrets	✅ Full control	Across all namespaces
+Ingress / StatefulSets / DaemonSets / Jobs / CronJobs	✅ Full control	Across all namespaces
+ResourceQuotas / LimitRanges	✅ Full control	Across all namespaces
+Access Credentials	✅ Full cluster admin credentials	listClusterAdminCredential
+2. AKS Data Plane Admin
 
-This role merges:
+Description:
+This role allows full management of workloads within assigned namespaces but does not allow creating namespaces or managing cluster-level resources.
 
-AKS Cluster User Role
+Scope: Namespace-level (assignable per namespace)
 
-AKS Cluster Monitoring User
-
-AKS RBAC Reader
-
-AKS Namespace User
-
-It allows read-only access across all AKS clusters, namespaces, and workloads — useful for auditors, monitoring users, or support teams.
-
-Here’s the JSON:
+Permissions (JSON example):
 
 {
-  "Name": "Custom AKS Reader Role",
-  "IsCustom": true,
-  "Description": "Custom role combining AKS Cluster User, Monitoring User, Namespace User, and RBAC Reader roles to allow read-only access to clusters, namespaces, and workloads.",
-  "Actions": [
-    "Microsoft.Authorization/*/read",
-    "Microsoft.Resources/subscriptions/operationresults/read",
-    "Microsoft.Resources/subscriptions/read",
-    "Microsoft.Resources/subscriptions/resourceGroups/read",
-    "Microsoft.ContainerService/managedClusters/read",
-    "Microsoft.ContainerService/managedClusters/listClusterUserCredential/action",
-    "Microsoft.ContainerService/managedClusters/listClusterMonitoringUserCredential/action",
-    "Microsoft.ContainerService/managedClusters/accessProfiles/listCredential/action",
-    "Microsoft.ContainerService/managedClusters/managedNamespaces/read",
-    "Microsoft.ContainerService/managedClusters/managedNamespaces/listCredential/action"
-  ],
-  "NotActions": [],
-  "DataActions": [
-    "Microsoft.ContainerService/managedClusters/apps/controllerrevisions/read",
-    "Microsoft.ContainerService/managedClusters/apps/daemonsets/read",
-    "Microsoft.ContainerService/managedClusters/apps/deployments/read",
-    "Microsoft.ContainerService/managedClusters/apps/replicasets/read",
-    "Microsoft.ContainerService/managedClusters/apps/statefulsets/read",
-    "Microsoft.ContainerService/managedClusters/autoscaling/horizontalpodautoscalers/read",
-    "Microsoft.ContainerService/managedClusters/batch/cronjobs/read",
-    "Microsoft.ContainerService/managedClusters/batch/jobs/read",
-    "Microsoft.ContainerService/managedClusters/configmaps/read",
-    "Microsoft.ContainerService/managedClusters/discovery.k8s.io/endpointslices/read",
-    "Microsoft.ContainerService/managedClusters/endpoints/read",
-    "Microsoft.ContainerService/managedClusters/events/read",
-    "Microsoft.ContainerService/managedClusters/limitranges/read",
-    "Microsoft.ContainerService/managedClusters/namespaces/read",
-    "Microsoft.ContainerService/managedClusters/networking.k8s.io/ingresses/read",
-    "Microsoft.ContainerService/managedClusters/networking.k8s.io/networkpolicies/read",
-    "Microsoft.ContainerService/managedClusters/persistentvolumeclaims/read",
-    "Microsoft.ContainerService/managedClusters/pods/read",
-    "Microsoft.ContainerService/managedClusters/resourcequotas/read",
-    "Microsoft.ContainerService/managedClusters/serviceaccounts/read",
-    "Microsoft.ContainerService/managedClusters/services/read"
-  ],
-  "NotDataActions": [],
-  "AssignableScopes": ["/"]
+  "roleName": "AKS Data Plane Admin",
+  "description": "Manage all resources within assigned namespaces. Cannot manage cluster-level settings or namespaces.",
+  "assignableScopes": ["/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerService/managedClusters/<cluster>/managedNamespaces/<namespace>"],
+  "permissions": [
+    {
+      "actions": ["Microsoft.ContainerService/managedClusters/managedNamespaces/*"],
+      "notActions": [],
+      "dataActions": ["Microsoft.ContainerService/managedClusters/*"],
+      "notDataActions": [
+        "Microsoft.ContainerService/managedClusters/namespaces/*"
+      ]
+    }
+  ]
 }
 
 
-AKS Platform Admin
+Capabilities:
+
+Resource / Action	Allowed?	Notes
+Namespaces	❌	Cannot create or delete
+Deployments / Pods	✅	Within assigned namespaces
+Services / ConfigMaps / Secrets	✅	Within assigned namespaces
+Ingress / StatefulSets / DaemonSets / Jobs / CronJobs	✅	Within assigned namespaces
+ResourceQuotas / LimitRanges	✅	Within assigned namespaces
+RBAC	❌	Cannot modify roles or bindings
+3. AKS Reader Role
 
 Description:
-This role provides full administrative access to AKS clusters and namespaces, combining cluster-level and namespace-level management capabilities. Users can:
+This role provides read-only access to view AKS cluster and namespace resources without modifying them.
 
-Read and list cluster credentials (admin, user, monitoring)
+Scope: Cluster-level or Namespace-level (depending on assignment)
 
-Manage all cluster resources (Pods, Deployments, DaemonSets, StatefulSets, Services, ConfigMaps, Secrets, Jobs, CronJobs, Namespaces, Network Policies, etc.)
+Permissions (JSON example):
 
-Run commands against the cluster
+{
+  "roleName": "AKS Reader Role",
+  "description": "Read-only access to view cluster and namespace resources.",
+  "assignableScopes": ["/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerService/managedClusters/<cluster>"],
+  "permissions": [
+    {
+      "actions": ["Microsoft.Authorization/*/read", "Microsoft.Resources/subscriptions/resourceGroups/read"],
+      "notActions": [],
+      "dataActions": [
+        "Microsoft.ContainerService/managedClusters/*/read"
+      ],
+      "notDataActions": []
+    }
+  ]
+}
 
-Read role assignments and resource groups
 
-Key Points:
+Capabilities:
 
-Grants both cluster-wide and namespace-wide management.
+Resource / Action	Allowed?	Notes
+Namespaces	✅ Read	Cannot create or delete
+Deployments / Pods	✅ Read	Within assigned namespaces
+Services / ConfigMaps / Secrets	✅ Read	Cannot modify
+Ingress / StatefulSets / DaemonSets / Jobs / CronJobs	✅ Read	Cannot modify
+RBAC	❌	Cannot modify roles or bindings
+Scope Definition
 
-Enables operational tasks like deploying workloads, modifying namespace resources, and accessing Secrets.
+Roles can be assigned at cluster level (all namespaces) or per namespace.
 
-Suitable for platform engineers or operators who manage AKS infrastructure.
+JSON assignableScopes determines where the role is effective:
 
-Custom Role 2: AKS Platform Reader
-
-Description:
-This role provides read-only access across AKS clusters and namespaces, combining the data-reading capabilities from multiple built-in AKS reader roles. Users can:
-
-Read cluster credentials (user, monitoring)
-
-View cluster and namespace resources (Pods, Deployments, DaemonSets, Services, ConfigMaps, Jobs, CronJobs, Network Policies, ResourceQuotas, etc.)
-
-Read role assignments and resource groups
-
-Key Points:
-
-No ability to modify any resources.
-
-Can be assigned at cluster scope for cross-namespace read access.
-
-Ideal for auditors, developers, or monitoring tools that need visibility without write permissions.
-
-In short:
-
-Admin role: Full control at cluster and namespace level.
-
-Reader role: Full visibility at cluster and namespace level, no write access.
+"/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerService/managedClusters/<cluster>"
+"/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerServ
