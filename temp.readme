@@ -1,169 +1,165 @@
-# Azure Data Explorer - Security and Configuration Guidelines
+Azure Kubernetes Service (AKS) Custom Roles Documentation
+Overview
 
-This document provides detailed information on security and configuration practices for Azure Data Explorer. Follow the guidelines to ensure a secure and compliant deployment of Azure Data Explorer clusters.
+In AKS, permissions can be segregated into Control Plane, Data Plane, and Reader roles to ensure secure and structured access management:
 
----
+AKS Control Plane Admin – Full cluster-level control including namespace creation and cluster-wide resource management.
 
-## Network Security
+AKS Data Plane Admin – Namespace-level workload management; cannot create or manage cluster-wide resources.
 
-### NS-1: Establish Network Segmentation Boundaries
+AKS Reader Role – Read-only access to view cluster and namespace resources; cannot modify or create resources.
 
-| Feature                        | Supported | Enabled By Default | Configuration Responsibility |
-|--------------------------------|-----------|--------------------|------------------------------|
-| Virtual Network Integration    | True      | False              | Customer                     |
-| Network Security Group Support | True      | False              | Customer                     |
+1. AKS Control Plane Admin
 
-**Configuration Guidance:**
+Description:
+This role provides full administrative control over the AKS cluster, including namespace creation, RBAC management, and all cluster-level and workload resources.
 
-- **Virtual Network Integration**: Deploy Azure Data Explorer cluster into a subnet in your VNet. Implement NSG rules to restrict traffic and connect on-premises network to the Azure Data Explorer cluster's subnet.
-  - [Deploy Azure Data Explorer cluster into your Virtual Network](https://docs.microsoft.com/azure/data-explorer/deploy-vnet)
-- **Network Security Group Support**: Configure NSG rules when Azure Data Explorer is injected into the customer virtual network. It's recommended to follow a private endpoint-based network security implementation.
-  - [Configure Network Security Group rules](https://docs.microsoft.com/azure/data-explorer/nsg)
+Scope: Cluster-level (assignable per cluster)
 
-### NS-2: Secure Cloud Services with Network Controls
+Permissions (JSON example):
 
-| Feature                  | Supported | Enabled By Default | Configuration Responsibility |
-|--------------------------|-----------|--------------------|------------------------------|
-| Azure Private Link       | True      | False              | Customer                     |
-| Disable Public Network Access | True | False              | Customer                     |
+{
+  "roleName": "AKS Control Plane Admin - Secure",
+  "description": "Full cluster admin with granular actions, no wildcards for cluster-wide operations.",
+  "assignableScopes": ["/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerService/managedClusters/<cluster>"],
+  "permissions": [
+    {
+      "actions": [
+        "Microsoft.ContainerService/managedClusters/read",
+        "Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action",
+        "Microsoft.ContainerService/managedClusters/accessProfiles/listCredential/action",
+        "Microsoft.ContainerService/managedClusters/runCommand/action"
+      ],
+      "dataActions": [
+        "Microsoft.ContainerService/managedClusters/namespaces/read",
+        "Microsoft.ContainerService/managedClusters/namespaces/write",
+        "Microsoft.ContainerService/managedClusters/namespaces/delete",
+        "Microsoft.ContainerService/managedClusters/apps/deployments/*",
+        "Microsoft.ContainerService/managedClusters/apps/statefulsets/*",
+        "Microsoft.ContainerService/managedClusters/apps/daemonsets/*",
+        "Microsoft.ContainerService/managedClusters/apps/replicasets/*",
+        "Microsoft.ContainerService/managedClusters/batch/jobs/*",
+        "Microsoft.ContainerService/managedClusters/batch/cronjobs/*",
+        "Microsoft.ContainerService/managedClusters/extensions/ingresses/*",
+        "Microsoft.ContainerService/managedClusters/services/*",
+        "Microsoft.ContainerService/managedClusters/configmaps/*",
+        "Microsoft.ContainerService/managedClusters/secrets/*",
+        "Microsoft.ContainerService/managedClusters/serviceaccounts/*"
+      ],
+      "notActions": [],
+      "notDataActions": []
+    }
+  ]
+}
 
-**Configuration Guidance:**
 
-- **Azure Private Link**: Use private endpoints to secure network access to your cluster, which simplifies deployment and reduces maintenance overhead.
-  - [Private endpoints for Azure Data Explorer](https://docs.microsoft.com/azure/data-explorer/private-endpoints)
-- **Disable Public Network Access**: Disable public network access using the service-level IP ACL filtering rule or a toggling switch for public network access.
-  - [Restrict public access to your Azure Data Explorer cluster](https://docs.microsoft.com/azure/data-explorer/restrict-public-access)
 
----
+Capabilities:
 
-## Identity Management
+Resource / Action	Allowed?	Notes
+Namespaces	✅ Create / Update / Delete	Cluster-level operation
+ClusterRoles / ClusterRoleBindings	✅ Manage	Full control over RBAC
+Deployments / Pods	✅ Full control	Across all namespaces
+Services / ConfigMaps / Secrets	✅ Full control	Across all namespaces
+Ingress / StatefulSets / DaemonSets / Jobs / CronJobs	✅ Full control	Across all namespaces
+ResourceQuotas / LimitRanges	✅ Full control	Across all namespaces
+Access Credentials	✅ Full cluster admin credentials	listClusterAdminCredential
+2. AKS Data Plane Admin
 
-### IM-1: Use Centralized Identity and Authentication System
+Description:
+This role allows full management of workloads within assigned namespaces but does not allow creating namespaces or managing cluster-level resources.
 
-| Feature                                | Supported | Enabled By Default | Configuration Responsibility |
-|----------------------------------------|-----------|--------------------|------------------------------|
-| Azure AD Authentication for Data Plane | True      | False              | Customer                     |
-| Local Authentication Methods for Data Plane | False | Not Applicable | Not Applicable |
+Scope: Namespace-level (assignable per namespace)
 
-**Configuration Guidance:**
+Permissions (JSON example):
 
-- Use Azure Active Directory (Azure AD) as the default authentication method to control data plane access.
-  - [How to authenticate with Azure Active Directory (Azure AD) for Azure Data Explorer access](https://docs.microsoft.com/azure/data-explorer/azure-ad-authentication)
+{
+  "roleName": "AKS Data Plane Admin - Secure",
+  "description": "Namespace-level workload admin. Cannot modify cluster-level resources or RBAC.",
+  "assignableScopes": ["/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerService/managedClusters/<cluster>/managedNamespaces/<namespace>"],
+  "permissions": [
+    {
+      "actions": [],
+      "dataActions": [
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/apps/deployments/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/apps/statefulsets/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/apps/daemonsets/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/batch/jobs/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/batch/cronjobs/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/services/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/configmaps/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/secrets/*",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/serviceaccounts/*"
+      ],
+      "notActions": [],
+      "notDataActions": [
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/namespaces/write",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/namespaces/delete",
+        "Microsoft.ContainerService/managedClusters/managedNamespaces/roleAssignments/*"
+      ]
+    }
+  ]
+}
 
-### IM-3: Manage Application Identities Securely and Automatically
 
-| Feature           | Supported | Enabled By Default | Configuration Responsibility |
-|-------------------|-----------|--------------------|------------------------------|
-| Managed Identities | True      | True               | Microsoft                    |
-| Service Principals | True      | True               | Microsoft                    |
+Capabilities:
 
-**Feature Notes:**
+Resource / Action	Allowed?	Notes
+Namespaces	❌	Cannot create or delete
+Deployments / Pods	✅	Within assigned namespaces
+Services / ConfigMaps / Secrets	✅	Within assigned namespaces
+Ingress / StatefulSets / DaemonSets / Jobs / CronJobs	✅	Within assigned namespaces
+ResourceQuotas / LimitRanges	✅	Within assigned namespaces
+RBAC	❌	Cannot modify roles or bindings
+3. AKS Reader Role
 
-- Azure Data Explorer supports System and User Managed Identities and can use Managed Identities to authenticate with other services for Ingestion and Query.
-- No additional configurations are required as these are enabled by default.
-  - [Managed identities overview](https://docs.microsoft.com/azure/active-directory/managed-identities-azure-resources/overview)
-  - [Azure Active Directory authentication using an application](https://docs.microsoft.com/azure/data-explorer/azure-ad-authentication)
+Description:
+This role provides read-only access to view AKS cluster and namespace resources without modifying them.
 
-### IM-7: Restrict Resource Access Based on Conditions
+Scope: Cluster-level or Namespace-level (depending on assignment)
 
-| Feature                         | Supported | Enabled By Default | Configuration Responsibility |
-|---------------------------------|-----------|--------------------|------------------------------|
-| Conditional Access for Data Plane | True    | False              | Customer                     |
+Permissions (JSON example):
+{
+  "roleName": "AKS Reader Role - Secure",
+  "description": "Read-only access to cluster and namespace resources. No secret or RBAC access.",
+  "assignableScopes": ["/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerService/managedClusters/<cluster>"],
+  "permissions": [
+    {
+      "actions": ["Microsoft.Resources/subscriptions/resourceGroups/read"],
+      "dataActions": [
+        "Microsoft.ContainerService/managedClusters/namespaces/read",
+        "Microsoft.ContainerService/managedClusters/apps/deployments/read",
+        "Microsoft.ContainerService/managedClusters/apps/statefulsets/read",
+        "Microsoft.ContainerService/managedClusters/apps/daemonsets/read",
+        "Microsoft.ContainerService/managedClusters/batch/jobs/read",
+        "Microsoft.ContainerService/managedClusters/batch/cronjobs/read",
+        "Microsoft.ContainerService/managedClusters/services/read",
+        "Microsoft.ContainerService/managedClusters/configmaps/read"
+      ],
+      "notActions": [],
+      "notDataActions": [
+        "Microsoft.ContainerService/managedClusters/secrets/read",
+        "Microsoft.ContainerService/managedClusters/roleAssignments/*"
+      ]
+    }
+  ]
+}
 
-**Configuration Guidance:**
 
-- Define conditions and criteria for Azure AD conditional access to control data plane access based on location, device, or sign-in behavior.
-  - [Conditional Access with Azure Data Explorer](https://docs.microsoft.com/azure/data-explorer/conditional-access)
 
----
+Capabilities:
 
-## Data Protection
+Resource / Action	Allowed?	Notes
+Namespaces	✅ Read	Cannot create or delete
+Deployments / Pods	✅ Read	Within assigned namespaces
+Services / ConfigMaps / Secrets	✅ Read	Cannot modify
+Ingress / StatefulSets / DaemonSets / Jobs / CronJobs	✅ Read	Cannot modify
+RBAC	❌	Cannot modify roles or bindings
+Scope Definition
 
-### DP-1: Discover, Classify, and Label Sensitive Data
+Roles can be assigned at cluster level (all namespaces) or per namespace.
 
-| Feature                           | Supported | Enabled By Default | Configuration Responsibility |
-|-----------------------------------|-----------|--------------------|------------------------------|
-| Sensitive Data Discovery and Classification | True | False             | Customer                     |
+JSON assignableScopes determines where the role is effective:
 
-**Configuration Guidance:**
-
-- Use Microsoft Purview to scan, classify, and label sensitive data in Azure Data Explorer.
-  - [Azure Purview](https://docs.microsoft.com/azure/purview/)
-
-### DP-2: Monitor Anomalies and Threats Targeting Sensitive Data
-
-| Feature                         | Supported | Enabled By Default | Configuration Responsibility |
-|---------------------------------|-----------|--------------------|------------------------------|
-| Data Leakage/Loss Prevention    | True      | False              | Customer                     |
-
-**Configuration Guidance:**
-
-- Control outbound access at the cluster level by defining callout policies to allow access to specified SQL, storage, or other endpoints to mitigate data exfiltration risks.
-  - [Restrict outbound access from your Azure Data Explorer cluster](https://docs.microsoft.com/azure/data-explorer/restrict-outbound-access)
-
-### DP-3: Encrypt Sensitive Data in Transit
-
-| Feature                 | Supported | Enabled By Default | Configuration Responsibility |
-|-------------------------|-----------|--------------------|------------------------------|
-| Data in Transit Encryption | True   | True               | Microsoft                    |
-
-**Configuration Guidance:**
-
-- No additional configurations are required as this feature is enabled by default.
-  - [Data Encryption in Azure Data Explorer](https://docs.microsoft.com/azure/data-explorer/data-encryption)
-
-### DP-4: Enable Data at Rest Encryption by Default
-
-| Feature                           | Supported | Enabled By Default | Configuration Responsibility |
-|-----------------------------------|-----------|--------------------|------------------------------|
-| Data at Rest Encryption Using Platform Keys | True | True             | Microsoft                    |
-
-**Configuration Guidance:**
-
-- No additional configurations are required as this feature is enabled by default.
-  - [Data Encryption in Azure Data Explorer](https://docs.microsoft.com/azure/data-explorer/data-encryption)
-
-### DP-5: Use Customer-Managed Key Option in Data at Rest Encryption When Required
-
-| Feature                               | Supported | Enabled By Default | Configuration Responsibility |
-|---------------------------------------|-----------|--------------------|------------------------------|
-| Data at Rest Encryption Using CMK     | True      | False              | Customer                     |
-
-**Configuration Guidance:**
-
-- Use customer-managed keys to have greater control over encryption keys. Manage encryption at the storage level with your own keys, providing flexibility to create, rotate, disable, and revoke access controls.
-  - [Encryption using configure customer-managed keys](https://docs.microsoft.com/azure/data-explorer/customer-managed-keys)
-
----
-
-## Asset Management
-
-### AM-2: Use Only Approved Services
-
-| Feature           | Supported | Enabled By Default | Configuration Responsibility |
-|-------------------|-----------|--------------------|------------------------------|
-| Azure Policy Support | True   | False              | Customer                     |
-
-**Configuration Guidance:**
-
-- Use Microsoft Defender for Cloud to configure Azure Policy to audit and enforce configurations of Azure resources. Monitor for configuration deviations and enforce secure configurations using Azure Policy.
-  - [Azure Policy Regulatory Compliance controls for Azure Data Explorer](https://docs.microsoft.com/azure/data-explorer/security-compliance)
-
----
-
-## Logging and Threat Detection
-
-### LT-4: Enable Logging for Security Investigation
-
-| Feature           | Supported | Enabled By Default | Configuration Responsibility |
-|-------------------|-----------|--------------------|------------------------------|
-| Azure Resource Logs | True   | False              | Customer                     |
-
-**Configuration Guidance:**
-
-- Use Azure Data Explorer's diagnostic logs for insights on ingestion, commands, queries, and tables. Export logs to Azure Storage, Event Hub, or Log Analytics for monitoring and analysis.
-  - [Monitor Azure Data Explorer ingestion, commands, queries, and tables using diagnostic logs](https://docs.microsoft.com/azure/data-explorer/diagnostic-logs)
-
----
-
-For further details, refer to the specific configuration guidelines and references provided under each section.
+"/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerService/managedClusters/<cluster>"
+"/subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.ContainerServ
